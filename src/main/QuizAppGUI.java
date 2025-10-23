@@ -3,6 +3,8 @@ package main;
 import main.manager.QuizManager;
 import main.question.*;
 import main.strategy.*;
+import main.model.Result;
+import main.repository.ResultRepository;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -39,6 +41,10 @@ public class QuizAppGUI extends JFrame {
     // Timer for time-limited questions
     private Timer countdownTimer;
     private int remainingSeconds = 0;
+
+    // Aggregated stats for DB persistence
+    private int correctCount = 0;
+    private long totalDurationSec = 0;
     
     // Multiple choice components
     private ButtonGroup answerButtonGroup;
@@ -452,17 +458,22 @@ public class QuizAppGUI extends JFrame {
         strategyLabel.setHorizontalAlignment(SwingConstants.CENTER);
         resultCard.add(strategyLabel);
         
-        // Buttons
+        // Buttons - 3 buttons evenly spaced
         JButton playAgainButton = createModernButton(Language.get("PLAY_AGAIN"), PRIMARY_COLOR);
-        playAgainButton.setBounds(80, 295, 180, 50);
+        playAgainButton.setBounds(50, 295, 130, 50);
         playAgainButton.addActionListener(e -> {
             resetQuiz();
             cardLayout.show(mainPanel, "WELCOME");
         });
         resultCard.add(playAgainButton);
         
+        JButton leaderboardButton = createModernButton(Language.get("LEADERBOARD"), new Color(138, 116, 249));
+        leaderboardButton.setBounds(190, 295, 140, 50);
+        leaderboardButton.addActionListener(e -> showLeaderboardDialog());
+        resultCard.add(leaderboardButton);
+
         JButton exitButton = createModernButton(Language.get("EXIT"), ERROR_COLOR);
-        exitButton.setBounds(280, 295, 140, 50);
+        exitButton.setBounds(340, 295, 110, 50);
         exitButton.addActionListener(e -> System.exit(0));
         resultCard.add(exitButton);
         
@@ -475,11 +486,235 @@ public class QuizAppGUI extends JFrame {
         
         return panel;
     }
+
+    private void showLeaderboardDialog() {
+        // Fetch top results
+        ResultRepository repo = new ResultRepository();
+        java.util.List<main.model.Result> items = repo.listTop(10);
+        
+        // Create custom dialog
+        JDialog dialog = new JDialog(this,Language.get("LEADERBOARD"), true);
+        dialog.setSize(900, 550);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout(15, 15));
+        dialog.getContentPane().setBackground(BG_COLOR);
+        
+        // Header panel with gradient
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(0, 0, new Color(138, 116, 249), 
+                                                      getWidth(), 0, PRIMARY_COLOR);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setPreferredSize(new Dimension(900, 80));
+        headerPanel.setLayout(new GridBagLayout());
+        
+        JLabel titleLabel = new JLabel(Language.get("LEADERBOARD_TITLE"));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel);
+        
+        dialog.add(headerPanel, BorderLayout.NORTH);
+        
+        // Table panel
+        JPanel tablePanel = new JPanel(new BorderLayout(10, 10));
+        tablePanel.setBackground(BG_COLOR);
+        tablePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Create table data
+        String[] columns = {
+            Language.get("LEADERBOARD_RANK"), 
+            Language.get("LEADERBOARD_PLAYER"), 
+            Language.get("LEADERBOARD_STRATEGY"), 
+            Language.get("LEADERBOARD_SCORE"), 
+            Language.get("LEADERBOARD_CORRECT_TOTAL"), 
+            Language.get("LEADERBOARD_TIME"), 
+            Language.get("LEADERBOARD_PLAYED_AT")
+        };
+        Object[][] data = new Object[items.size()][columns.length];
+        for (int i = 0; i < items.size(); i++) {
+            main.model.Result r = items.get(i);
+            data[i][0] = (i + 1);
+            data[i][1] = r.getPlayerName();
+            data[i][2] = r.getStrategy();
+            data[i][3] = r.getScore();
+            data[i][4] = r.getCorrectAnswers() + "/" + r.getTotalQuestions();
+            data[i][5] = r.getDurationSec() + "s";
+            data[i][6] = r.getPlayedAt() != null ? r.getPlayedAt().substring(0, 16) : "";
+        }
+        
+        JTable table = new JTable(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        
+        // Modern table styling
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setRowHeight(40);
+        table.setShowGrid(true);
+        table.setGridColor(new Color(230, 230, 230));
+        table.setSelectionBackground(new Color(230, 240, 255));
+        table.setSelectionForeground(TEXT_PRIMARY);
+        table.setBackground(CARD_BG);
+        table.setFillsViewportHeight(true);
+        
+        // Header styling
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(248, 249, 250));
+        table.getTableHeader().setForeground(TEXT_PRIMARY);
+        table.getTableHeader().setPreferredSize(new Dimension(0, 45));
+        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, PRIMARY_COLOR));
+        
+        // Column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(40);   // #
+        table.getColumnModel().getColumn(1).setPreferredWidth(120);  // Player
+        table.getColumnModel().getColumn(2).setPreferredWidth(150);  // Strategy
+        table.getColumnModel().getColumn(3).setPreferredWidth(70);   // Score
+        table.getColumnModel().getColumn(4).setPreferredWidth(100);  // Correct/Total
+        table.getColumnModel().getColumn(5).setPreferredWidth(80);   // Time
+        table.getColumnModel().getColumn(6).setPreferredWidth(140);  // Played At
+        
+        // Center align numeric columns
+        javax.swing.table.DefaultTableCellRenderer centerRenderer = 
+            new javax.swing.table.DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+        
+        // Highlight top 3
+        table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                if (!isSelected) {
+                    if (row == 0) {
+                        c.setBackground(new Color(255, 215, 0, 50)); // Gold
+                        setFont(getFont().deriveFont(Font.BOLD));
+                    } else if (row == 1) {
+                        c.setBackground(new Color(192, 192, 192, 50)); // Silver
+                    } else if (row == 2) {
+                        c.setBackground(new Color(205, 127, 50, 50)); // Bronze
+                    } else {
+                        c.setBackground(CARD_BG);
+                        setFont(getFont().deriveFont(Font.PLAIN));
+                    }
+                }
+                
+                if (column == 0 || column == 3 || column == 4 || column == 5) {
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    setHorizontalAlignment(SwingConstants.LEFT);
+                }
+                
+                return c;
+            }
+        });
+        
+        // Add right-click context menu for delete
+        JPopupMenu contextMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem(Language.get("LEADERBOARD_DELETE"));
+        deleteItem.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow >= 0 && selectedRow < items.size()) {
+                main.model.Result selectedResult = items.get(selectedRow);
+                
+                // Confirmation dialog
+                int confirm = JOptionPane.showConfirmDialog(
+                    dialog,
+                    Language.get("LEADERBOARD_DELETE_CONFIRM_MSG"),
+                    Language.get("LEADERBOARD_DELETE_CONFIRM_TITLE"),
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+                );
+                
+                if (confirm == JOptionPane.OK_OPTION) {
+                    boolean deleted = repo.deleteById(selectedResult.getId());
+                    if (deleted) {
+                        JOptionPane.showMessageDialog(
+                            dialog,
+                            Language.get("LEADERBOARD_DELETE_SUCCESS"),
+                            Language.get("LEADERBOARD_DELETE_CONFIRM_TITLE"),
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
+                        dialog.dispose();
+                        showLeaderboardDialog(); // Refresh
+                    } else {
+                        JOptionPane.showMessageDialog(
+                            dialog,
+                            Language.get("LEADERBOARD_DELETE_FAILED"),
+                            Language.get("LEADERBOARD_DELETE_CONFIRM_TITLE"),
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+            }
+        });
+        contextMenu.add(deleteItem);
+        
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            private void showContextMenu(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                if (row >= 0 && row < table.getRowCount()) {
+                    table.setRowSelectionInterval(row, row);
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
+        scrollPane.getViewport().setBackground(CARD_BG);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        
+        dialog.add(tablePanel, BorderLayout.CENTER);
+        
+        // Close button
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(BG_COLOR);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        
+        JButton closeButton = createModernButton(Language.get("LEADERBOARD_CLOSE"), PRIMARY_COLOR);
+        closeButton.setPreferredSize(new Dimension(150, 45));
+        closeButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(closeButton);
+        
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.setVisible(true);
+    }
     
     private void startQuiz() {
         currentQuestionIndex = 0;
         quizManager.resetScore();
         quizManager.resetQuiz();
+        correctCount = 0;
+        totalDurationSec = 0;
         
         setupQuestions();
         
@@ -775,6 +1010,7 @@ public class QuizAppGUI extends JFrame {
         if (isCorrect) {
             int score = quizManager.calculateScore(question.getDifficulty(), timeTaken);
             quizManager.addScore(score);
+            correctCount++;
             showModernDialog(
                 "CORRECT!\n\nPoints earned: " + score + "\nTotal score: " + quizManager.getTotalScore(),
                 "Great!",
@@ -785,6 +1021,7 @@ public class QuizAppGUI extends JFrame {
                 "Oops!",
                 JOptionPane.ERROR_MESSAGE);
         }
+        totalDurationSec += timeTaken;
         
         currentQuestionIndex++;
         
@@ -868,6 +1105,21 @@ public class QuizAppGUI extends JFrame {
             ratingLabel.setText(Language.get("RESULT_RATING_KEEP_TRYING"));
             ratingLabel.setForeground(ERROR_COLOR);
         }
+
+        // Persist the result (best-effort)
+        try {
+            Result r = new Result(
+                quizManager.getPlayerName(),
+                quizManager.getScoringStrategyName(),
+                quizManager.getTotalScore(),
+                TOTAL_QUESTIONS,
+                correctCount,
+                totalDurationSec
+            );
+            new ResultRepository().save(r);
+        } catch (Exception ex) {
+            System.err.println("[DB] save result error: " + ex.getMessage());
+        }
         
         cardLayout.show(mainPanel, "RESULT");
     }
@@ -878,6 +1130,8 @@ public class QuizAppGUI extends JFrame {
         quizManager.resetQuiz();
         answerButtonGroup = null;
         answerButtons = null;
+        correctCount = 0;
+        totalDurationSec = 0;
         
         // Stop timer if running
         if (countdownTimer != null && countdownTimer.isRunning()) {

@@ -99,6 +99,23 @@ public class Language {
             case "PLAY_AGAIN": return "Play Again";
             case "EXIT": return "Exit";
             
+            // Leaderboard
+            case "LEADERBOARD": return "Leaderboard";
+            case "LEADERBOARD_TITLE": return "TOP 10 LEADERBOARD";
+            case "LEADERBOARD_RANK": return "#";
+            case "LEADERBOARD_PLAYER": return "Player";
+            case "LEADERBOARD_STRATEGY": return "Strategy";
+            case "LEADERBOARD_SCORE": return "Score";
+            case "LEADERBOARD_CORRECT_TOTAL": return "Correct/Total";
+            case "LEADERBOARD_TIME": return "Time(s)";
+            case "LEADERBOARD_PLAYED_AT": return "Played At";
+            case "LEADERBOARD_CLOSE": return "Close";
+            case "LEADERBOARD_DELETE": return "Delete Player";
+            case "LEADERBOARD_DELETE_CONFIRM_TITLE": return "Confirm Delete";
+            case "LEADERBOARD_DELETE_CONFIRM_MSG": return "Are you sure you want to delete this player's record?";
+            case "LEADERBOARD_DELETE_SUCCESS": return "Player record deleted successfully!";
+            case "LEADERBOARD_DELETE_FAILED": return "Failed to delete player record.";
+            
             // Questions - Multiple Choice
             case "Q1_MC": return "What is the main purpose of the Singleton pattern?";
             case "Q1_A": return "Ensure a class has only one instance";
@@ -216,6 +233,23 @@ public class Language {
             case "RESULT_RATING_KEEP_TRYING": return "Cố gắng lên! Bạn sẽ giỏi hơn!";
             case "PLAY_AGAIN": return "Chơi Lại";
             case "EXIT": return "Thoát";
+            
+            // Leaderboard
+            case "LEADERBOARD": return "Bảng Xếp Hạng";
+            case "LEADERBOARD_TITLE": return "BẢNG XẾP HẠNG TOP 10";
+            case "LEADERBOARD_RANK": return "Hạng";
+            case "LEADERBOARD_PLAYER": return "Người Chơi";
+            case "LEADERBOARD_STRATEGY": return "Chiến Lược";
+            case "LEADERBOARD_SCORE": return "Điểm";
+            case "LEADERBOARD_CORRECT_TOTAL": return "Đúng/Tổng";
+            case "LEADERBOARD_TIME": return "Thời Gian";
+            case "LEADERBOARD_PLAYED_AT": return "Ngày Chơi";
+            case "LEADERBOARD_CLOSE": return "Đóng";
+            case "LEADERBOARD_DELETE": return "Xóa Người Chơi";
+            case "LEADERBOARD_DELETE_CONFIRM_TITLE": return "Xác Nhận Xóa";
+            case "LEADERBOARD_DELETE_CONFIRM_MSG": return "Bạn có chắc muốn xóa thông tin người chơi này?";
+            case "LEADERBOARD_DELETE_SUCCESS": return "Đã xóa thông tin người chơi thành công!";
+            case "LEADERBOARD_DELETE_FAILED": return "Xóa thông tin người chơi thất bại.";
             
             // Questions - Multiple Choice
             case "Q1_MC": return "Mục đích chính của mẫu Singleton là gì?";
