@@ -1,4 +1,4 @@
-# Quiz Learning App - Modern GUI Edition 🎨🌏
+# Quiz Learning App - Modern GUI Edition 🎨🌏💾
 
 ## 📚 Mục tiêu dự án
 
@@ -14,6 +14,8 @@ Dự án **Quiz Learning App** là một ứng dụng **Desktop GUI** hiện đ�
 - 🎯 **10 câu hỏi ngẫu nhiên**: 5 trắc nghiệm + 5 text input
 - 📊 **3 chiến lược chấm điểm**: Fixed, Difficulty, Speed Bonus
 - 💡 **Gợi ý thông minh**: Chỉ cho câu text input
+- 💾 **Database SQLite**: Lưu kết quả, xem leaderboard, quản lý người chơi
+- 🏆 **Bảng xếp hạng**: Top 10 với tính năng xóa người chơi
 
 ---
 
@@ -23,26 +25,39 @@ Dự án **Quiz Learning App** là một ứng dụng **Desktop GUI** hiện đ�
 - **Java JDK 8 trở lên**
 - **Hệ điều hành**: Windows/Mac/Linux
 - **GUI**: Swing (built-in, không cần cài thêm)
+- **Database**: SQLite JDBC driver (xem hướng dẫn bên dưới)
 
-### Cách 1: Sử dụng batch file (Windows - Khuyến nghị)
+### Bước 1: Chuẩn bị SQLite JDBC Driver
+
+1. Tải SQLite JDBC driver từ: https://github.com/xerial/sqlite-jdbc/releases
+2. Tải file JAR (ví dụ: `sqlite-jdbc-3.50.0.0.jar`)
+3. Đổi tên file thành `sqlite-jdbc.jar`
+4. Đặt vào thư mục `lib/` trong project: `lib/sqlite-jdbc.jar`
+
+### Bước 2: Chạy ứng dụng
+
+#### Cách 1: Sử dụng batch file (Windows - Khuyến nghị)
 
 ```powershell
 run-gui.bat
 ```
 
-### Cách 2: Chạy thủ công
+#### Cách 2: Chạy thủ công
 
 1. **Biên dịch với UTF-8 encoding:**
 ```powershell
-javac -encoding UTF-8 -d bin src/main/strategy/*.java src/main/question/*.java src/main/manager/*.java src/main/Language.java src/main/QuizAppGUI.java
+javac -encoding UTF-8 -cp "lib\sqlite-jdbc.jar" -d bin src/main/strategy/*.java src/main/question/*.java src/main/manager/*.java src/main/db/*.java src/main/model/*.java src/main/repository/*.java src/main/Language.java src/main/QuizAppGUI.java
 ```
 
 2. **Chạy ứng dụng:**
 ```powershell
-java -cp bin main.QuizAppGUI
+java -Dfile.encoding=UTF-8 -cp "bin;lib\sqlite-jdbc.jar" main.QuizAppGUI
 ```
 
-**Lưu ý:** Bắt buộc dùng `-encoding UTF-8` để hiển thị tiếng Việt đúng!
+**Lưu ý:** 
+- Bắt buộc dùng `-encoding UTF-8` để hiển thị tiếng Việt đúng!
+- Phải có `sqlite-jdbc.jar` trong classpath để database hoạt động
+- File database sẽ tự động tạo tại `Database/data/quiz.db`
 
 ---
 
@@ -229,13 +244,74 @@ timer = new Timer(1000, e -> {
 
 ---
 
-## 📁 Cấu trúc thư mục
+## � Hệ thống Database (SQLite)
+
+**Vị trí:** `Database/` folder
+
+**Tính năng:**
+- Lưu tự động kết quả mỗi lần chơi
+- Xem bảng xếp hạng Top 10
+- Xóa người chơi bằng chuột phải
+- Hỗ trợ đa ngôn ngữ cho tất cả UI
+
+**Schema:**
+- **Table `results`**: Lưu kết quả quiz
+  - id (PRIMARY KEY)
+  - player_name
+  - strategy
+  - score
+  - total_questions
+  - correct_answers
+  - duration_sec
+  - played_at (timestamp)
+  
+- **Table `settings`**: Lưu cấu hình (dự phòng)
+  - key (PRIMARY KEY)
+  - value
+
+**File database:** `Database/data/quiz.db` (tự động tạo)
+
+**SQL Scripts:**
+- `Database/scripts/001_create_tables.sql` - DDL tạo bảng
+- `Database/scripts/002_seed_demo.sql` - Demo data
+
+**Repository pattern:**
+- `src/main/db/Database.java` - Connection helper
+- `src/main/model/Result.java` - POJO
+- `src/main/repository/ResultRepository.java` - CRUD operations
+
+---
+
+## 🏆 Leaderboard (Bảng Xếp Hạng)
+
+**Tính năng:**
+- Hiển thị Top 10 người chơi theo điểm cao nhất
+- Hỗ trợ đa ngôn ngữ (EN/VI)
+- Highlight Top 3:
+  - 🥇 Rank 1: Nền vàng + chữ đậm
+  - 🥈 Rank 2: Nền bạc
+  - 🥉 Rank 3: Nền đồng
+- Giao diện hiện đại với gradient header
+- Cột hiển thị: Hạng, Người chơi, Chiến lược, Điểm, Đúng/Tổng, Thời gian, Ngày chơi
+
+**Cách xóa người chơi:**
+1. Chuột phải vào hàng người chơi
+2. Chọn "Delete Player" / "Xóa Người Chơi"
+3. Xác nhận trong dialog
+4. Bảng tự động refresh sau khi xóa
+
+**Truy cập:**
+- Nút "🏆 Leaderboard" ở màn hình kết quả
+
+---
+
+## �📁 Cấu trúc thư mục
 
 ```
 src/
 ├── main/
-│   ├── QuizAppGUI.java                 (GUI Main - 1185 lines)
-│   ├── Language.java                   (Bilingual Support)
+│   ├── QuizAppGUI.java                 (GUI Main - 1400+ lines)
+│   ├── Language.java                   (Bilingual Support - 315 lines)
 │   ├── manager/
 │   │   └── QuizManager.java            (SINGLETON)
 │   ├── question/
@@ -245,11 +321,26 @@ src/
 │   │   ├── QuestionDecorator.java      (DECORATOR - Abstract)
 │   │   ├── HintQuestion.java           (Gợi ý - chỉ text input)
 │   │   └── TimedQuestion.java          (Timer - mọi câu)
-│   └── strategy/
-│       ├── ScoringStrategy.java        (STRATEGY - Interface)
-│       ├── FixedScoreStrategy.java     (10 điểm/câu)
-│       ├── DifficultyScoreStrategy.java(5/10/15 điểm)
-│       └── SpeedScoreStrategy.java     (Bonus tốc độ)
+│   ├── strategy/
+│   │   ├── ScoringStrategy.java        (STRATEGY - Interface)
+│   │   ├── FixedScoreStrategy.java     (10 điểm/câu)
+│   │   ├── DifficultyScoreStrategy.java(5/10/15 điểm)
+│   │   └── SpeedScoreStrategy.java     (Bonus tốc độ)
+│   ├── db/
+│   │   └── Database.java               (SQLite connection)
+│   ├── model/
+│   │   └── Result.java                 (Result POJO)
+│   └── repository/
+│       └── ResultRepository.java       (CRUD operations)
+Database/
+├── scripts/
+│   ├── 001_create_tables.sql           (DDL schema)
+│   └── 002_seed_demo.sql               (Demo data)
+├── data/
+│   └── quiz.db                         (Created at runtime)
+└── README.md                           (Database documentation)
+lib/
+└── sqlite-jdbc.jar                     (SQLite JDBC driver)
 run-gui.bat                             (Windows launcher)
 ```
 
@@ -281,7 +372,14 @@ run-gui.bat                             (Windows launcher)
 ### 4. **Result Screen**
 - Gradient celebration background
 - Score display with large font
-- Play Again button
+- 3 buttons: Play Again, 🏆 Leaderboard, Exit
+- Tự động lưu kết quả vào database
+
+### 5. **Leaderboard Dialog**
+- Gradient header (purple → blue)
+- Top 10 table với highlight Top 3
+- Right-click menu để xóa người chơi
+- Close button
 
 ---
 
@@ -290,7 +388,7 @@ run-gui.bat                             (Windows launcher)
 1. **🌏 Bilingual Support (EN/VI)**
    - Toggle button tròn ở góc phải
    - Tự động refresh UI
-   - Dịch questions + answers + UI
+   - Dịch questions + answers + UI + database UI
 
 2. **⏱️ Real Countdown Timer**
    - 30 giây/câu
@@ -311,7 +409,17 @@ run-gui.bat                             (Windows launcher)
    - Difficulty: 5/10/15 điểm
    - Speed Bonus: +5 điểm nếu <10s
 
-6. **🎨 Modern UI Design**
+6. **💾 Database Persistence**
+   - SQLite embedded database
+   - Tự động lưu kết quả sau mỗi lần chơi
+   - Không mất dữ liệu khi đóng app
+
+7. **🏆 Leaderboard System**
+   - Top 10 theo điểm cao nhất
+   - Highlight Top 3 (vàng, bạc, đồng)
+   - Confirmation dialog trước khi xóa
+
+8. **🎨 Modern UI Design**
    - Gradient backgrounds
    - Rounded corners
    - Hover effects
@@ -389,6 +497,26 @@ Hoặc chạy `run-gui.bat` đã cấu hình sẵn.
 1. Java version: `java -version` (cần JDK 8+)
 2. Compilation errors: Xem output của javac
 3. ClassNotFoundException: Kiểm tra `-cp bin` đúng đường dẫn
+4. SQLite driver: Đảm bảo `lib\sqlite-jdbc.jar` tồn tại
+
+### SQLite Driver không tìm thấy
+**Lỗi:** `java.lang.ClassNotFoundException: org.sqlite.JDBC`  
+**Giải pháp:**
+1. Download SQLite JDBC driver từ [GitHub Releases](https://github.com/xerial/sqlite-jdbc/releases)
+2. Đặt file JAR vào thư mục `lib\sqlite-jdbc.jar`
+3. Kiểm tra classpath trong `run-gui.bat` có `-cp "bin;lib\sqlite-jdbc.jar"`
+
+### Database không lưu kết quả
+**Nguyên nhân có thể:**
+1. Thư mục `Database\data` chưa tạo → Tạo thủ công hoặc chạy app sẽ tự động tạo
+2. Quyền ghi file bị chặn → Chạy CMD/PowerShell as Administrator
+3. Database connection lỗi → Kiểm tra logs trong console
+
+### Leaderboard trống dù đã chơi
+**Kiểm tra:**
+1. File `Database\data\quiz.db` có tồn tại không?
+2. Có lỗi nào trong console khi lưu kết quả không?
+3. Thử run script `Database\scripts\002_seed_demo.sql` để thêm dữ liệu demo
 
 ### Timer không hoạt động
 **Nguyên nhân:** Code đang chạy, timer hoạt động thực tế. Kiểm tra:
@@ -408,14 +536,24 @@ Hoặc chạy `run-gui.bat` đã cấu hình sẵn.
 
 ## 🔮 Future Enhancements
 
-Những tính năng có thể mở rộng:
-- 🗃️ Database integration (MySQL, SQLite)
-- 🏆 Leaderboard system
-- 📊 Statistics & progress tracking
-- 🎵 Sound effects
-- 🌐 Thêm ngôn ngữ khác (Français, 中文...)
-- 🎯 Difficulty levels cho từng quiz session
+Những tính năng đã hoàn thành:
+- ✅ Database integration (SQLite)
+- ✅ Leaderboard system với delete functionality
+- ✅ Bilingual support (EN/VI)
+- ✅ Modern UI với gradient và màu sắc hiện đại
+- ✅ Timer với progress bar và auto-skip
+
+Những tính năng có thể mở rộng thêm:
+- �️ Export leaderboard (CSV, Excel)
+- �📊 Statistics & progress tracking chi tiết hơn (charts, graphs)
+- 🎵 Sound effects (background music, correct/incorrect sounds)
+- 🌐 Thêm ngôn ngữ khác (Français, 中文, 日本語...)
+- 🎯 Difficulty levels cho từng quiz session (Easy/Medium/Hard)
 - 📱 Responsive UI cho tablet mode
+- 👤 User profiles với avatar và preferences
+- 🏅 Achievement system (badges cho milestones)
+- 🎨 Customizable themes (dark mode, color schemes)
+- 📚 Multiple quiz categories (Math, Science, History...)
 
 ---
 
