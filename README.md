@@ -21,21 +21,6 @@ Dự án **Quiz Learning App** là một ứng dụng **Desktop GUI** hiện đ�
 
 ## 🚀 Cách chạy
 
-### Yêu cầu hệ thống
-- **Java JDK 8 trở lên**
-- **Hệ điều hành**: Windows/Mac/Linux
-- **GUI**: Swing (built-in, không cần cài thêm)
-- **Database**: SQLite JDBC driver (xem hướng dẫn bên dưới)
-
-### Bước 1: Chuẩn bị SQLite JDBC Driver
-
-1. Tải SQLite JDBC driver từ: https://github.com/xerial/sqlite-jdbc/releases
-2. Tải file JAR (ví dụ: `sqlite-jdbc-3.50.0.0.jar`)
-3. Đổi tên file thành `sqlite-jdbc.jar`
-4. Đặt vào thư mục `lib/` trong project: `lib/sqlite-jdbc.jar`
-
-### Bước 2: Chạy ứng dụng
-
 #### Cách 1: Sử dụng batch file (Windows - Khuyến nghị)
 
 ```powershell
