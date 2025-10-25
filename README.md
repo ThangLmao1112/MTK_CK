@@ -19,7 +19,7 @@ Dự án **Quiz Learning App** là một ứng dụng **Desktop GUI** hiện đ�
 
 ---
 
-## 🚀 Cách chạy
+## 🚀 Cách chạy(Cần JDK 25 để chạy)
 
 #### Cách 1: Sử dụng batch file (Windows - Khuyến nghị)
 
